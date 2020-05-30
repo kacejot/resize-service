@@ -1,0 +1,27 @@
+scalar Bytes
+
+type Image {
+  imageLink: String!
+  width: Int!
+  height: Int!
+}
+
+input ImageInput {
+  filename: String!
+  contents: Bytes!
+}
+
+type ResizeResult {
+  id: ID!
+  original: Image!
+  resized: Image!
+}
+
+type Mutation {
+  resize(image: ImageInput!, width: Int!, height: Int!): ResizeResult!
+  resizeExisting(id: ID!, width: Int!, height: Int!): ResizeResult!
+}
+
+type Query {
+  listProcessedImages: [ResizeResult]!
+}
