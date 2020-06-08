@@ -12,7 +12,19 @@ import (
 )
 
 func (r *mutationResolver) Resize(ctx context.Context, image model.ImageInput, width int, height int) (*model.ResizeResult, error) {
-	panic(fmt.Errorf("not implemented"))
+	result, err := r.imageResize.Resize([]byte(image.Contents), uint(width), uint(height))
+	if err != nil {
+		return nil, err
+	}
+
+	// user is stored in context by webhook that reads HTTP headers
+	user := ctx.Value(UserContextKey).(string)
+	response, err := r.imageStorage.RecordResizeResult(user, result)
+	if err != nil {
+		return nil, err
+	}
+
+	return &response, nil
 }
 
 func (r *mutationResolver) ResizeExisting(ctx context.Context, id string, width int, height int) (*model.ResizeResult, error) {

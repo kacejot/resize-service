@@ -1,7 +1,12 @@
 package graph
 
-// This file will not be regenerated automatically.
-//
-// It serves as dependency injection for your app, add any dependencies you require here.
+import (
+	"github.com/kacejot/resize-service/pkg/resize"
+	"github.com/kacejot/resize-service/pkg/storage"
+)
 
-type Resolver struct{}
+// Resolver stores context required for query and mutation resolvers
+type Resolver struct{
+	imageResize resize.Resize
+	imageStorage storage.Storage
+}
