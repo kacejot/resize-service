@@ -2,6 +2,7 @@ scalar Bytes
 
 type Image {
   imageLink: String!
+  expiresAt: String!
   width: Int!
   height: Int!
 }

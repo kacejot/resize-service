@@ -6,7 +6,7 @@ import (
 )
 
 // Resolver stores context required for query and mutation resolvers
-type Resolver struct{
-	imageResize resize.Resize
+type Resolver struct {
+	imageResize  resize.Resize
 	imageStorage storage.Storage
 }

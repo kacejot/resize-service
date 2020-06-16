@@ -44,6 +44,7 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Image struct {
+		ExpiresAt func(childComplexity int) int
 		Height    func(childComplexity int) int
 		ImageLink func(childComplexity int) int
 		Width     func(childComplexity int) int
@@ -87,6 +88,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "Image.expiresAt":
+		if e.complexity.Image.ExpiresAt == nil {
+			break
+		}
+
+		return e.complexity.Image.ExpiresAt(childComplexity), true
 
 	case "Image.height":
 		if e.complexity.Image.Height == nil {
@@ -229,6 +237,7 @@ var sources = []*ast.Source{
 
 type Image {
   imageLink: String!
+  expiresAt: String!
   width: Int!
   height: Int!
 }
@@ -388,6 +397,40 @@ func (ec *executionContext) _Image_imageLink(ctx context.Context, field graphql.
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ImageLink, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Image_expiresAt(ctx context.Context, field graphql.CollectedField, obj *model.Image) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Image",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExpiresAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1859,6 +1902,11 @@ func (ec *executionContext) _Image(ctx context.Context, sel ast.SelectionSet, ob
 			out.Values[i] = graphql.MarshalString("Image")
 		case "imageLink":
 			out.Values[i] = ec._Image_imageLink(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "expiresAt":
+			out.Values[i] = ec._Image_expiresAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

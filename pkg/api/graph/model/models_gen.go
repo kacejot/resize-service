@@ -4,6 +4,7 @@ package model
 
 type Image struct {
 	ImageLink string `json:"imageLink"`
+	ExpiresAt string `json:"expiresAt"`
 	Width     int    `json:"width"`
 	Height    int    `json:"height"`
 }
