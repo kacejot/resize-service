@@ -18,7 +18,6 @@ type Cloud struct {
 
 // UploadResult contains links to uploaded images and their ID
 type UploadResult struct {
-	ID       string
 	Original *model.Image
 	Resized  *model.Image
 }
@@ -49,7 +48,6 @@ func (c *Cloud) UploadImages(images resize.Result) (*UploadResult, error) {
 	}
 
 	return &UploadResult{
-		ID:       originalImagePath,
 		Original: originalUploadResult,
 		Resized:  resizedUploadResult,
 	}, nil
