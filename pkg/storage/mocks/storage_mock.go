@@ -5,6 +5,7 @@
 package storage_mock
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	model "github.com/kacejot/resize-service/pkg/api/graph/model"
 	resize "github.com/kacejot/resize-service/pkg/resize"
@@ -35,39 +36,40 @@ func (m *MockStorage) EXPECT() *MockStorageMockRecorder {
 }
 
 // GetRecordByID mocks base method
-func (m *MockStorage) GetRecordByID(arg0 string) (model.Image, error) {
+func (m *MockStorage) GetRecordByID(arg0 context.Context, arg1 string) (*model.Image, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRecordByID", arg0)
-	ret0, _ := ret[0].(model.Image)
+	ret := m.ctrl.Call(m, "GetRecordByID", arg0, arg1)
+	ret0, _ := ret[0].(*model.Image)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetRecordByID indicates an expected call of GetRecordByID
-func (mr *MockStorageMockRecorder) GetRecordByID(arg0 interface{}) *gomock.Call {
+func (mr *MockStorageMockRecorder) GetRecordByID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRecordByID", reflect.TypeOf((*MockStorage)(nil).GetRecordByID), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRecordByID", reflect.TypeOf((*MockStorage)(nil).GetRecordByID), arg0, arg1)
 }
 
 // ListUserRecords mocks base method
-func (m *MockStorage) ListUserRecords(arg0 string) []model.ResizeResult {
+func (m *MockStorage) ListUserRecords() ([]model.ResizeResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListUserRecords", arg0)
+	ret := m.ctrl.Call(m, "ListUserRecords")
 	ret0, _ := ret[0].([]model.ResizeResult)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // ListUserRecords indicates an expected call of ListUserRecords
-func (mr *MockStorageMockRecorder) ListUserRecords(arg0 interface{}) *gomock.Call {
+func (mr *MockStorageMockRecorder) ListUserRecords() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUserRecords", reflect.TypeOf((*MockStorage)(nil).ListUserRecords), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUserRecords", reflect.TypeOf((*MockStorage)(nil).ListUserRecords))
 }
 
 // RecordResizeResult mocks base method
-func (m *MockStorage) RecordResizeResult(arg0 string, arg1 resize.Result) (model.ResizeResult, error) {
+func (m *MockStorage) RecordResizeResult(arg0 context.Context, arg1 resize.Result) (*model.ResizeResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RecordResizeResult", arg0, arg1)
-	ret0, _ := ret[0].(model.ResizeResult)
+	ret0, _ := ret[0].(*model.ResizeResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -119,10 +119,8 @@ func (rs *RecordStorage) FindRecordByID(ctx context.Context, id string) (*model.
 }
 
 // FindRecordsForUser returns all performed resizes by single user
-func (rs *RecordStorage) FindRecordsForUser(ctx context.Context, user string) ([]model.ResizeResult, error) {
-	if user != ctx.Value("user").(string) {
-		return nil, errors.New("access denied")
-	}
+func (rs *RecordStorage) FindRecordsForUser(ctx context.Context) ([]model.ResizeResult, error) {
+	user := ctx.Value("user").(string)
 
 	query := fmt.Sprintf(`
 		FOR record in %s

@@ -17,14 +17,12 @@ func (r *mutationResolver) Resize(ctx context.Context, image model.ImageInput, w
 		return nil, err
 	}
 
-	// user is stored in context by webhook that reads HTTP headers
-	user := ctx.Value(UserContextKey).(string)
-	response, err := r.imageStorage.RecordResizeResult(user, result)
+	response, err := r.imageStorage.RecordResizeResult(ctx, result)
 	if err != nil {
 		return nil, err
 	}
 
-	return &response, nil
+	return response, nil
 }
 
 func (r *mutationResolver) ResizeExisting(ctx context.Context, id string, width int, height int) (*model.ResizeResult, error) {

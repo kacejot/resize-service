@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/99designs/gqlgen v0.11.3
-	github.com/arangodb/go-driver v0.0.0-20200615084428-b48819e1b42c
+	github.com/arangodb/go-driver v0.0.0-20200616181429-6d8dfb1fff1e
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/golang/mock v1.4.3
 	github.com/google/uuid v1.1.1

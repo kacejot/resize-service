@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"bytes"
+	"flag"
 	"io/ioutil"
 	"strconv"
 
@@ -22,11 +23,23 @@ type UploadResult struct {
 	Resized  *model.Image
 }
 
+// DropboxConfig stores key and may be updated in future
+type DropboxConfig struct {
+	Key string
+}
+
+// LoadArangoConfig fills ArangoConfig with cmd args
+func LoadDropboxConfig() DropboxConfig {
+	return DropboxConfig{
+		Key: *flag.String("dropbox-key", "", "identifies the storage and the user"),
+	}
+}
+
 // New creates new instance of Dropbox cloud storage
-func New(key string) *Cloud {
+func New(config DropboxConfig) *Cloud {
 	return &Cloud{
 		dropboxClient: dropbox.New(&dropbox.Config{
-			AccessToken: key,
+			AccessToken: config.Key,
 		}),
 	}
 }

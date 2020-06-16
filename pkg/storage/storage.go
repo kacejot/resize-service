@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"context"
+
 	"github.com/kacejot/resize-service/pkg/api/graph/model"
 	"github.com/kacejot/resize-service/pkg/resize"
 )
@@ -10,7 +12,7 @@ import (
 // Storage encapsulates interaction of GraphQL with cloud with images and DB with
 // resize records
 type Storage interface {
-	RecordResizeResult(user string, resizeResult resize.Result) (model.ResizeResult, error)
-	GetRecordByID(id string) (original model.Image, err error)
-	ListUserRecords(user string) []model.ResizeResult
+	RecordResizeResult(ctx context.Context, resizeResult resize.Result) (*model.ResizeResult, error)
+	GetRecordByID(ctx context.Context, id string) (original *model.Image, err error)
+	ListUserRecords() ([]model.ResizeResult, error)
 }
