@@ -5,8 +5,8 @@ package resize
 // Image stores image data encoded in its initial format
 type Image struct {
 	Data   []byte
-	Width  uint
-	Height uint
+	Width  int
+	Height int
 }
 
 // Result is return type of Resize operation
@@ -17,5 +17,5 @@ type Result struct {
 
 // Resize represents the instance that is able to resize an image
 type Resize interface {
-	Resize(image []byte, width uint, height uint) (Result, error)
+	Resize(image []byte, width int, height int) (Result, error)
 }

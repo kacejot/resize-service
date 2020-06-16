@@ -3,6 +3,7 @@ package graph
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"testing"
 	"time"
 
@@ -53,7 +54,7 @@ func TestResizeValidImage(t *testing.T) {
 	}
 
 	resizeCall := mockResize.EXPECT().
-		Resize(imageBuffer, uint(480), uint(320)).
+		Resize(imageBuffer, 480, 320).
 		Times(1).
 		Return(resizeResult, nil)
 
@@ -93,4 +94,97 @@ func TestResizeValidImage(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, recordResult, *response)
+}
+
+func TestResizeInvalidImage(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	ctx, cancelFn := context.WithTimeout(context.Background(), time.Second*10)
+	ctx = context.WithValue(ctx, UserContextKey, "sample_user")
+	defer cancelFn()
+
+	mockResize := resize_mock.NewMockResize(mockCtrl)
+
+	imageBuffer, err := hex.DecodeString(utils.RemoveWhitepaces(validPng))
+	assert.Nil(t, err)
+
+	// add some garbage in the very start of the image buffer
+	imageBuffer = append([]byte{0, 1, 2, 3}, imageBuffer...)
+
+	mockResize.EXPECT().
+		Resize(imageBuffer, 480, 320).
+		Times(1).
+		Return(resize.Result{}, errors.New("image has invalid format"))
+
+	resolver := &Resolver{
+		imageResize:  mockResize,
+		imageStorage: nil,
+	}
+
+	_, err = resolver.Mutation().Resize(
+		ctx,
+		model.ImageInput{
+			Filename: "sample.png",
+			Contents: string(imageBuffer),
+		},
+		480,
+		320)
+
+	assert.Error(t, err, "image has invalid format")
+}
+
+func TestResizeInvalidImageSize(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	ctx, cancelFn := context.WithTimeout(context.Background(), time.Second*10)
+	ctx = context.WithValue(ctx, UserContextKey, "sample_user")
+	defer cancelFn()
+
+	imageBuffer, err := hex.DecodeString(utils.RemoveWhitepaces(validPng))
+	assert.Nil(t, err)
+
+	mockResize := resize_mock.NewMockResize(mockCtrl)
+
+	width := -10
+	height := -5
+
+	mockResize.EXPECT().
+		Resize(imageBuffer, width, height).
+		Times(1).
+		Return(resize.Result{}, errors.New("image has invalid size"))
+
+	resolver := &Resolver{
+		imageResize:  mockResize,
+		imageStorage: nil,
+	}
+
+	_, err = resolver.Mutation().Resize(
+		ctx,
+		model.ImageInput{
+			Filename: "sample.png",
+			Contents: string(imageBuffer),
+		},
+		width,
+		height)
+
+	assert.Error(t, err, "image has invalid size")
+}
+
+func TestResizeExistingValidImage(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	ctx, cancelFn := context.WithTimeout(context.Background(), time.Second*10)
+	ctx = context.WithValue(ctx, UserContextKey, "sample_user")
+	defer cancelFn()
+
+	// mockResize := resize_mock.NewMockResize(mockCtrl)
+	mockStorage := storage_mock.NewMockStorage(mockCtrl)
+
+	mockStorage.EXPECT().
+		GetRecordByID("1").
+		Times(1).
+		Return()
 }

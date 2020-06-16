@@ -12,7 +12,7 @@ import (
 )
 
 func (r *mutationResolver) Resize(ctx context.Context, image model.ImageInput, width int, height int) (*model.ResizeResult, error) {
-	result, err := r.imageResize.Resize([]byte(image.Contents), uint(width), uint(height))
+	result, err := r.imageResize.Resize([]byte(image.Contents), width, height)
 	if err != nil {
 		return nil, err
 	}
