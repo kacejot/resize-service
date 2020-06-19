@@ -71,7 +71,7 @@ func OpenRecords(config *ArangoConfig) (*RecordStorage, error) {
 		if err != nil {
 			return nil, err
 		}
-	} else {
+	} else if err != nil {
 		return nil, err
 	}
 
