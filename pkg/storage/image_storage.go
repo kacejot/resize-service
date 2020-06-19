@@ -27,16 +27,25 @@ func (is *ImageStorage) RecordResizeResult(ctx context.Context, resizeResult res
 }
 
 // GetRecordByID acquires records of image resize process by ID
-func (is *ImageStorage) GetRecordByID(ctx context.Context, id string) (*model.Image, error) {
+func (is *ImageStorage) GetRecordByID(ctx context.Context, id string) (*resize.Image, error) {
 	result, err := is.recordStorage.FindRecordByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	return result.Original, nil
+	original, err := is.cloudStorage.DownloadImage(result.Original.ImageLink)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resize.Image{
+		Data:   original,
+		Width:  result.Original.Width,
+		Height: result.Original.Height,
+	}, nil
 }
 
 // ListUserRecords shows list of resizes that are done by current user
-func (is *ImageStorage) ListUserRecords(ctx context.Context) ([]model.ResizeResult, error) {
+func (is *ImageStorage) ListUserRecords(ctx context.Context) ([]*model.ResizeResult, error) {
 	return is.recordStorage.FindRecordsForUser(ctx)
 }

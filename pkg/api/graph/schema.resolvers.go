@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kacejot/resize-service/pkg/api/graph/generated"
 	"github.com/kacejot/resize-service/pkg/api/graph/model"
@@ -17,7 +16,7 @@ func (r *mutationResolver) Resize(ctx context.Context, image model.ImageInput, w
 		return nil, err
 	}
 
-	response, err := r.imageStorage.RecordResizeResult(ctx, result)
+	response, err := r.imageStorage.RecordResizeResult(ctx, *result)
 	if err != nil {
 		return nil, err
 	}
@@ -26,11 +25,26 @@ func (r *mutationResolver) Resize(ctx context.Context, image model.ImageInput, w
 }
 
 func (r *mutationResolver) ResizeExisting(ctx context.Context, id string, width int, height int) (*model.ResizeResult, error) {
-	panic(fmt.Errorf("not implemented"))
+	originalImage, err := r.imageStorage.GetRecordByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := r.imageResize.Resize(originalImage.Data, width, height)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := r.imageStorage.RecordResizeResult(ctx, *result)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
 }
 
 func (r *queryResolver) ListProcessedImages(ctx context.Context) ([]*model.ResizeResult, error) {
-	panic(fmt.Errorf("not implemented"))
+	return r.imageStorage.ListUserRecords(ctx)
 }
 
 // Mutation returns generated.MutationResolver implementation.

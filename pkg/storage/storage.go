@@ -13,6 +13,6 @@ import (
 // resize records
 type Storage interface {
 	RecordResizeResult(ctx context.Context, resizeResult resize.Result) (*model.ResizeResult, error)
-	GetRecordByID(ctx context.Context, id string) (original *model.Image, err error)
-	ListUserRecords() ([]model.ResizeResult, error)
+	GetRecordByID(ctx context.Context, id string) (*resize.Image, error)
+	ListUserRecords(ctx context.Context) ([]*model.ResizeResult, error)
 }

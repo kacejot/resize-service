@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const validPng = ` 	
+const validPng = `
     89 50 4e 47 0d 0a 1a 0a 00 00 00 0d 49 48 44 52
     00 00 00 01 00 00 00 01 08 02 00 00 00 90 77 53
     de 00 00 00 01 73 52 47 42 00 ae ce 1c e9 00 00
@@ -31,7 +31,6 @@ func TestResizeValidImage(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	ctx, cancelFn := context.WithTimeout(context.Background(), time.Second*10)
-	ctx = context.WithValue(ctx, UserContextKey, "sample_user")
 	defer cancelFn()
 
 	mockResize := resize_mock.NewMockResize(mockCtrl)
@@ -40,7 +39,7 @@ func TestResizeValidImage(t *testing.T) {
 	imageBuffer, err := hex.DecodeString(utils.RemoveWhitepaces(validPng))
 	assert.Nil(t, err)
 
-	resizeResult := resize.Result{
+	resizeResult := &resize.Result{
 		Original: resize.Image{
 			Data:   imageBuffer,
 			Width:  1,
@@ -58,7 +57,7 @@ func TestResizeValidImage(t *testing.T) {
 		Times(1).
 		Return(resizeResult, nil)
 
-	recordResult := model.ResizeResult{
+	recordResult := &model.ResizeResult{
 		ID: "1",
 		Original: &model.Image{
 			ImageLink: "http://link.to.original.image.com",
@@ -73,7 +72,7 @@ func TestResizeValidImage(t *testing.T) {
 	}
 
 	mockStorage.EXPECT().
-		RecordResizeResult("sample_user", resizeResult).
+		RecordResizeResult(ctx, *resizeResult).
 		Times(1).
 		After(resizeCall).
 		Return(recordResult, nil)
@@ -93,7 +92,7 @@ func TestResizeValidImage(t *testing.T) {
 		320)
 
 	assert.Nil(t, err)
-	assert.Equal(t, recordResult, *response)
+	assert.Equal(t, recordResult, response)
 }
 
 func TestResizeInvalidImage(t *testing.T) {
@@ -101,7 +100,6 @@ func TestResizeInvalidImage(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	ctx, cancelFn := context.WithTimeout(context.Background(), time.Second*10)
-	ctx = context.WithValue(ctx, UserContextKey, "sample_user")
 	defer cancelFn()
 
 	mockResize := resize_mock.NewMockResize(mockCtrl)
@@ -115,7 +113,7 @@ func TestResizeInvalidImage(t *testing.T) {
 	mockResize.EXPECT().
 		Resize(imageBuffer, 480, 320).
 		Times(1).
-		Return(resize.Result{}, errors.New("image has invalid format"))
+		Return(nil, errors.New("image has invalid format"))
 
 	resolver := &Resolver{
 		imageResize:  mockResize,
@@ -139,7 +137,6 @@ func TestResizeInvalidImageSize(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	ctx, cancelFn := context.WithTimeout(context.Background(), time.Second*10)
-	ctx = context.WithValue(ctx, UserContextKey, "sample_user")
 	defer cancelFn()
 
 	imageBuffer, err := hex.DecodeString(utils.RemoveWhitepaces(validPng))
@@ -153,7 +150,7 @@ func TestResizeInvalidImageSize(t *testing.T) {
 	mockResize.EXPECT().
 		Resize(imageBuffer, width, height).
 		Times(1).
-		Return(resize.Result{}, errors.New("image has invalid size"))
+		Return(nil, errors.New("image has invalid size"))
 
 	resolver := &Resolver{
 		imageResize:  mockResize,
@@ -177,14 +174,113 @@ func TestResizeExistingValidImage(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	ctx, cancelFn := context.WithTimeout(context.Background(), time.Second*10)
-	ctx = context.WithValue(ctx, UserContextKey, "sample_user")
 	defer cancelFn()
 
-	// mockResize := resize_mock.NewMockResize(mockCtrl)
+	mockResize := resize_mock.NewMockResize(mockCtrl)
 	mockStorage := storage_mock.NewMockStorage(mockCtrl)
 
+	imageBuffer, err := hex.DecodeString(utils.RemoveWhitepaces(validPng))
+	assert.Nil(t, err)
+
+	expectedRecord := &resize.Image{
+		Data:   imageBuffer,
+		Width:  480,
+		Height: 320,
+	}
+
 	mockStorage.EXPECT().
-		GetRecordByID("1").
+		GetRecordByID(ctx, "1").
 		Times(1).
-		Return()
+		Return(expectedRecord, nil)
+
+	resizeResult := &resize.Result{
+		Original: resize.Image{
+			Data:   imageBuffer,
+			Width:  480,
+			Height: 320,
+		},
+		Resized: resize.Image{
+			Data:   imageBuffer,
+			Width:  600,
+			Height: 500,
+		},
+	}
+
+	mockResize.EXPECT().
+		Resize(expectedRecord.Data, 600, 500).
+		Times(1).
+		Return(resizeResult, nil)
+
+	recordResult := &model.ResizeResult{
+		ID: "1",
+		Original: &model.Image{
+			ImageLink: "http://link.to.original.image.com",
+			Width:     480,
+			Height:    320,
+		},
+		Resized: &model.Image{
+			ImageLink: "http://link.to.resized.image.com",
+			Width:     600,
+			Height:    500,
+		},
+	}
+
+	mockStorage.EXPECT().
+		RecordResizeResult(ctx, *resizeResult).
+		Times(1).
+		Return(recordResult, nil)
+
+	resolver := &Resolver{
+		imageResize:  mockResize,
+		imageStorage: mockStorage,
+	}
+
+	response, err := resolver.Mutation().ResizeExisting(
+		ctx, "1", 600, 500)
+
+	assert.Nil(t, err)
+	assert.Equal(t, recordResult, response)
+}
+
+func TestListImagesForUser(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	ctx, cancelFn := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancelFn()
+
+	mockStorage := storage_mock.NewMockStorage(mockCtrl)
+
+	record := &model.ResizeResult{
+		ID: "1",
+		Original: &model.Image{
+			ImageLink: "original.com",
+			ExpiresAt: "now",
+			Width:     600,
+			Height:    500,
+		},
+		Resized: &model.Image{
+			ImageLink: "resized.com",
+			ExpiresAt: "now",
+			Width:     480,
+			Height:    320,
+		},
+	}
+
+	recordResult := []*model.ResizeResult{record}
+
+	mockStorage.EXPECT().
+		ListUserRecords(ctx).
+		Times(1).
+		Return(recordResult, nil)
+
+	resolver := &Resolver{
+		imageResize:  nil,
+		imageStorage: mockStorage,
+	}
+
+	response, err := resolver.Query().ListProcessedImages(ctx)
+
+	assert.Nil(t, err)
+	assert.Equal(t, recordResult, response)
 }

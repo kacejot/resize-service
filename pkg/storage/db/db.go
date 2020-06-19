@@ -119,7 +119,7 @@ func (rs *RecordStorage) FindRecordByID(ctx context.Context, id string) (*model.
 }
 
 // FindRecordsForUser returns all performed resizes by single user
-func (rs *RecordStorage) FindRecordsForUser(ctx context.Context) ([]model.ResizeResult, error) {
+func (rs *RecordStorage) FindRecordsForUser(ctx context.Context) ([]*model.ResizeResult, error) {
 	user := ctx.Value("user").(string)
 
 	query := fmt.Sprintf(`
@@ -135,7 +135,7 @@ func (rs *RecordStorage) FindRecordsForUser(ctx context.Context) ([]model.Resize
 	}
 	defer cursor.Close()
 
-	out := []model.ResizeResult{}
+	out := []*model.ResizeResult{}
 	for {
 		record := new(Record)
 		meta, err := cursor.ReadDocument(ctx, record)
@@ -145,7 +145,7 @@ func (rs *RecordStorage) FindRecordsForUser(ctx context.Context) ([]model.Resize
 			return nil, err
 		}
 
-		out = append(out, model.ResizeResult{
+		out = append(out, &model.ResizeResult{
 			ID:       meta.Key,
 			Original: record.Images.Original,
 			Resized:  record.Images.Resized,

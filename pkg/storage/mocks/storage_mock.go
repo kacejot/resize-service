@@ -36,10 +36,10 @@ func (m *MockStorage) EXPECT() *MockStorageMockRecorder {
 }
 
 // GetRecordByID mocks base method
-func (m *MockStorage) GetRecordByID(arg0 context.Context, arg1 string) (*model.Image, error) {
+func (m *MockStorage) GetRecordByID(arg0 context.Context, arg1 string) (*resize.Image, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRecordByID", arg0, arg1)
-	ret0, _ := ret[0].(*model.Image)
+	ret0, _ := ret[0].(*resize.Image)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -51,18 +51,18 @@ func (mr *MockStorageMockRecorder) GetRecordByID(arg0, arg1 interface{}) *gomock
 }
 
 // ListUserRecords mocks base method
-func (m *MockStorage) ListUserRecords() ([]model.ResizeResult, error) {
+func (m *MockStorage) ListUserRecords(arg0 context.Context) ([]*model.ResizeResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListUserRecords")
-	ret0, _ := ret[0].([]model.ResizeResult)
+	ret := m.ctrl.Call(m, "ListUserRecords", arg0)
+	ret0, _ := ret[0].([]*model.ResizeResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListUserRecords indicates an expected call of ListUserRecords
-func (mr *MockStorageMockRecorder) ListUserRecords() *gomock.Call {
+func (mr *MockStorageMockRecorder) ListUserRecords(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUserRecords", reflect.TypeOf((*MockStorage)(nil).ListUserRecords))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUserRecords", reflect.TypeOf((*MockStorage)(nil).ListUserRecords), arg0)
 }
 
 // RecordResizeResult mocks base method
