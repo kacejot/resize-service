@@ -1,5 +1,6 @@
 # resize-service
 Ready to launch resize service with Dropbox storage
+It supports png, jpeg and gif formats.
 
 ## Get
 
@@ -113,6 +114,7 @@ query {
 }
 ```
 It still works, but returns 3 ids instead of one, because we asked this format. Also it returns not full info about images in case we don't need it.
+Image buffer must be encoded in base64.
 
 ## Authorization
 It is not implemented yet, but all operations are bound to the user that is present in every GraphQL requst in `Authorization` header.
