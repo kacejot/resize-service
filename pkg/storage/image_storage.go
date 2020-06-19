@@ -38,7 +38,26 @@ func (is *ImageStorage) RecordResizeResult(ctx context.Context, resizeResult res
 		return nil, err
 	}
 
-	return is.recordStorage.StoreRecord(ctx, *uploadResult)
+	record, err := is.recordStorage.StoreRecord(ctx, *uploadResult)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.ResizeResult{
+		ID: record.ID,
+		Original: &model.Image{
+			ImageLink: record.Images.Original.ImageLink,
+			ExpiresAt: record.Images.Original.ExpiresAt,
+			Width:     record.Images.Original.Width,
+			Height:    record.Images.Original.Height,
+		},
+		Resized: &model.Image{
+			ImageLink: record.Images.Resized.ImageLink,
+			ExpiresAt: record.Images.Resized.ExpiresAt,
+			Width:     record.Images.Resized.Width,
+			Height:    record.Images.Resized.Height,
+		},
+	}, nil
 }
 
 // GetRecordByID acquires records of image resize process by ID
@@ -48,19 +67,55 @@ func (is *ImageStorage) GetRecordByID(ctx context.Context, id string) (*resize.I
 		return nil, err
 	}
 
-	original, err := is.cloudStorage.DownloadImage(result.Original.ImageLink)
+	original, err := is.cloudStorage.DownloadImage(result.Images.Original.Path)
 	if err != nil {
 		return nil, err
 	}
 
 	return &resize.Image{
 		Data:   original,
-		Width:  result.Original.Width,
-		Height: result.Original.Height,
+		Width:  result.Images.Original.Width,
+		Height: result.Images.Original.Height,
 	}, nil
 }
 
 // ListUserRecords shows list of resizes that are done by current user
 func (is *ImageStorage) ListUserRecords(ctx context.Context) ([]*model.ResizeResult, error) {
-	return is.recordStorage.FindRecordsForUser(ctx)
+	records, err := is.recordStorage.FindRecordsForUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return recordsToResizeResults(records), nil
+}
+
+func recordToResizeResult(record *db.Record) *model.ResizeResult {
+	if nil == record {
+		return nil
+	}
+
+	return &model.ResizeResult{
+		ID: record.ID,
+		Original: &model.Image{
+			ImageLink: record.Images.Original.ImageLink,
+			ExpiresAt: record.Images.Original.ExpiresAt,
+			Width:     record.Images.Original.Width,
+			Height:    record.Images.Original.Height,
+		},
+		Resized: &model.Image{
+			ImageLink: record.Images.Resized.ImageLink,
+			ExpiresAt: record.Images.Resized.ExpiresAt,
+			Width:     record.Images.Resized.Width,
+			Height:    record.Images.Resized.Height,
+		},
+	}
+}
+
+func recordsToResizeResults(records []*db.Record) []*model.ResizeResult {
+	var result []*model.ResizeResult
+	for _, record := range records {
+		result = append(result, recordToResizeResult(record))
+	}
+
+	return result
 }

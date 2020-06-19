@@ -5,13 +5,19 @@ package graph
 
 import (
 	"context"
+	"encoding/base64"
 
 	"github.com/kacejot/resize-service/pkg/api/graph/generated"
 	"github.com/kacejot/resize-service/pkg/api/graph/model"
 )
 
 func (r *mutationResolver) Resize(ctx context.Context, image model.ImageInput, width int, height int) (*model.ResizeResult, error) {
-	result, err := r.imageResize.Resize([]byte(image.Contents), width, height)
+	buf, err := base64.StdEncoding.DecodeString(image.Contents)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := r.imageResize.Resize(buf, width, height)
 	if err != nil {
 		return nil, err
 	}

@@ -41,8 +41,11 @@ func authMiddleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user := r.Header.Get("Authorization")
 
-		ctx := context.WithValue(r.Context(), db.UserContextKey, user)
-		r = r.WithContext(ctx)
+		if "" != user {
+			ctx := context.WithValue(r.Context(), db.UserContextKey, user)
+			r = r.WithContext(ctx)
+		}
+
 		handler.ServeHTTP(w, r)
 	})
 }

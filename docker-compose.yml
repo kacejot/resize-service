@@ -9,6 +9,7 @@ services:
       ARANGO_USER: root
       ARANGO_PASSWORD: rootpassword
       ARANGO_ENDPOINT: "http://arangodb:8529"
+      DROPBOX_KEY: "<YOUR KEY>"
     ports:
       - 8080:8080
     restart: on-failure

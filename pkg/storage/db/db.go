@@ -31,8 +31,9 @@ type RecordStorage struct {
 
 // Record stores resize result after upload in database
 type Record struct {
-	Images cloud.UploadResult
+	ID     string
 	User   string
+	Images cloud.UploadResult
 }
 
 // LoadArangoConfig fills ArangoConfig with cmd args
@@ -87,7 +88,7 @@ func OpenRecords(config *ArangoConfig) (*RecordStorage, error) {
 
 // StoreRecord stores links of uploaded images to db and returns them with unique record ID
 // This ID could be used later to extract the record
-func (rs *RecordStorage) StoreRecord(ctx context.Context, result cloud.UploadResult) (*model.ResizeResult, error) {
+func (rs *RecordStorage) StoreRecord(ctx context.Context, result cloud.UploadResult) (*Record, error) {
 	user := ctx.Value(UserContextKey)
 	if user == nil {
 		return nil, errors.New("user was not specified")
@@ -102,17 +103,14 @@ func (rs *RecordStorage) StoreRecord(ctx context.Context, result cloud.UploadRes
 		return nil, err
 	}
 
-	return &model.ResizeResult{
-		ID:       meta.Key,
-		Original: result.Original,
-		Resized:  result.Resized,
-	}, nil
+	record.ID = meta.Key
+	return &record, nil
 }
 
 // FindRecordByID extracts one record from db by its id, if it exists
-func (rs *RecordStorage) FindRecordByID(ctx context.Context, id string) (*model.ResizeResult, error) {
-	out := new(Record)
-	meta, err := rs.records.ReadDocument(ctx, id, out)
+func (rs *RecordStorage) FindRecordByID(ctx context.Context, id string) (*Record, error) {
+	record := new(Record)
+	meta, err := rs.records.ReadDocument(ctx, id, record)
 	if err != nil {
 		return nil, err
 	}
@@ -122,19 +120,16 @@ func (rs *RecordStorage) FindRecordByID(ctx context.Context, id string) (*model.
 		return nil, errors.New("user was not specified")
 	}
 
-	if out.User != user.(string) {
+	if record.User != user.(string) {
 		return nil, errors.New("access denied")
 	}
 
-	return &model.ResizeResult{
-		ID:       meta.Key,
-		Original: out.Images.Original,
-		Resized:  out.Images.Resized,
-	}, nil
+	record.ID = meta.Key
+	return record, nil
 }
 
 // FindRecordsForUser returns all performed resizes by single user
-func (rs *RecordStorage) FindRecordsForUser(ctx context.Context) ([]*model.ResizeResult, error) {
+func (rs *RecordStorage) FindRecordsForUser(ctx context.Context) ([]*Record, error) {
 	user := ctx.Value(UserContextKey)
 	if user == nil {
 		return nil, errors.New("user was not specified")
@@ -143,18 +138,18 @@ func (rs *RecordStorage) FindRecordsForUser(ctx context.Context) ([]*model.Resiz
 
 	query := fmt.Sprintf(`
 		FOR record in %s
-			FILTER record.user == %s
+			FILTER record.User == @value
 			RETURN record`,
-		Collection,
-		userStr)
+		Collection)
 
-	cursor, err := rs.records.Database().Query(ctx, query, nil)
+	bindvars := map[string]interface{}{"value": userStr}
+	cursor, err := rs.records.Database().Query(ctx, query, bindvars)
 	if err != nil {
 		return nil, err
 	}
 	defer cursor.Close()
 
-	out := []*model.ResizeResult{}
+	out := []*Record{}
 	for {
 		record := new(Record)
 		meta, err := cursor.ReadDocument(ctx, record)
@@ -164,12 +159,18 @@ func (rs *RecordStorage) FindRecordsForUser(ctx context.Context) ([]*model.Resiz
 			return nil, err
 		}
 
-		out = append(out, &model.ResizeResult{
-			ID:       meta.Key,
-			Original: record.Images.Original,
-			Resized:  record.Images.Resized,
-		})
+		record.ID = meta.Key
+		out = append(out, record)
 	}
 
 	return out, nil
+}
+
+func imageToGraphQl(from *cloud.UploadedImage) *model.Image {
+	return &model.Image{
+		ImageLink: from.ImageLink,
+		ExpiresAt: from.ExpiresAt,
+		Width:     from.Width,
+		Height:    from.Height,
+	}
 }

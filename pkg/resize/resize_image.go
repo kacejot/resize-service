@@ -49,6 +49,7 @@ func (ir *ImageResize) Resize(img []byte, width int, height int) (*Result, error
 	}
 
 	return &Result{
+		Format: format,
 		Original: Image{
 			Data:   img,
 			Width:  config.Width,

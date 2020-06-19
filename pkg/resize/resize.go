@@ -11,6 +11,7 @@ type Image struct {
 
 // Result is return type of Resize operation
 type Result struct {
+	Format   string
 	Original Image
 	Resized  Image
 }

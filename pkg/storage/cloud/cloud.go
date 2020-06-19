@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
-	"github.com/kacejot/resize-service/pkg/api/graph/model"
 	"github.com/kacejot/resize-service/pkg/resize"
 	"github.com/kacejot/resize-service/pkg/utils"
 	"github.com/tj/go-dropbox"
@@ -19,8 +18,17 @@ type Cloud struct {
 
 // UploadResult contains links to uploaded images and their ID
 type UploadResult struct {
-	Original *model.Image
-	Resized  *model.Image
+	Original UploadedImage
+	Resized  UploadedImage
+}
+
+// UploadedImage contaons links and meta for uploaded images
+type UploadedImage struct {
+	Path      string
+	ImageLink string
+	ExpiresAt string
+	Width     int
+	Height    int
 }
 
 // DropboxConfig stores key and may be updated in future
@@ -38,17 +46,17 @@ func LoadDropboxConfig() *DropboxConfig {
 // New creates new instance of Dropbox cloud storage
 func New(config *DropboxConfig) *Cloud {
 	return &Cloud{
-		dropboxClient: dropbox.New(&dropbox.Config{
-			AccessToken: config.Key,
-		}),
+		dropboxClient: dropbox.New(dropbox.NewConfig(config.Key)),
 	}
 }
 
 // UploadImages uploads resized images to Dropbox cloud storage
 func (c *Cloud) UploadImages(images resize.Result) (*UploadResult, error) {
 	// create unique image names to avoid name collisions
-	originalImagePath := uuid.New().String()
-	resizedImagePath := originalImagePath + imageSizeToString(images.Resized)
+	originalImagePath := "/" + uuid.New().String()
+	resizedImagePath := originalImagePath + imageSizeToString(images.Resized) + "." + images.Format
+
+	originalImagePath += "." + images.Format
 
 	originalUploadResult, err := c.uploadImage(originalImagePath, images.Original)
 	if err != nil {
@@ -61,8 +69,8 @@ func (c *Cloud) UploadImages(images resize.Result) (*UploadResult, error) {
 	}
 
 	return &UploadResult{
-		Original: originalUploadResult,
-		Resized:  resizedUploadResult,
+		Original: *originalUploadResult,
+		Resized:  *resizedUploadResult,
 	}, nil
 }
 
@@ -79,7 +87,7 @@ func (c *Cloud) DownloadImage(path string) ([]byte, error) {
 	return ioutil.ReadAll(downloadResult.Body)
 }
 
-func (c *Cloud) uploadImage(path string, image resize.Image) (*model.Image, error) {
+func (c *Cloud) uploadImage(path string, image resize.Image) (*UploadedImage, error) {
 	_, err := c.dropboxClient.Files.Upload(&dropbox.UploadInput{
 		Path:   path,
 		Mode:   dropbox.WriteModeAdd,
@@ -96,7 +104,8 @@ func (c *Cloud) uploadImage(path string, image resize.Image) (*model.Image, erro
 		return nil, err
 	}
 
-	return &model.Image{
+	return &UploadedImage{
+		Path:      path,
 		ImageLink: resp.URL,
 		ExpiresAt: resp.Expires.String(),
 		Width:     image.Width,
