@@ -88,7 +88,7 @@ func OpenRecords(config *ArangoConfig) (*RecordStorage, error) {
 // StoreRecord stores links of uploaded images to db and returns them with unique record ID
 // This ID could be used later to extract the record
 func (rs *RecordStorage) StoreRecord(ctx context.Context, result cloud.UploadResult) (*model.ResizeResult, error) {
-	user := ctx.Value("user")
+	user := ctx.Value(UserContextKey)
 	if user == nil {
 		return nil, errors.New("user was not specified")
 	}
@@ -117,7 +117,7 @@ func (rs *RecordStorage) FindRecordByID(ctx context.Context, id string) (*model.
 		return nil, err
 	}
 
-	user := ctx.Value("user")
+	user := ctx.Value(UserContextKey)
 	if user == nil {
 		return nil, errors.New("user was not specified")
 	}
@@ -135,7 +135,7 @@ func (rs *RecordStorage) FindRecordByID(ctx context.Context, id string) (*model.
 
 // FindRecordsForUser returns all performed resizes by single user
 func (rs *RecordStorage) FindRecordsForUser(ctx context.Context) ([]*model.ResizeResult, error) {
-	user := ctx.Value("user")
+	user := ctx.Value(UserContextKey)
 	if user == nil {
 		return nil, errors.New("user was not specified")
 	}
