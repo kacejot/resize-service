@@ -3,8 +3,10 @@ package db
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
+	"time"
+
+	"github.com/kacejot/resize-service/pkg/utils"
 
 	"github.com/kacejot/resize-service/pkg/api/graph/model"
 
@@ -34,16 +36,19 @@ type Record struct {
 }
 
 // LoadArangoConfig fills ArangoConfig with cmd args
-func LoadArangoConfig() ArangoConfig {
-	return ArangoConfig{
-		Endpoint: *flag.String("arango-endpoint", "http://localhost:8529", "endpoint of main storage; format: \"host:port\""),
-		User:     *flag.String("arango-user", "", "user that has access to modfiy arangodb storage"),
-		Password: *flag.String("arango-password", "", "password to the user"),
+func LoadArangoConfig() *ArangoConfig {
+	return &ArangoConfig{
+		Endpoint: utils.EnvOr("ARANGO_ENDPOINT", "http://localhost:8529"),
+		User:     utils.EnvOrDie("ARANGO_USER"),
+		Password: utils.EnvOrDie("ARANGO_PASSWORD"),
 	}
 }
 
 // OpenRecords returns collection of resize results to have access to them
-func OpenRecords(ctx context.Context, config *ArangoConfig) (*RecordStorage, error) {
+func OpenRecords(config *ArangoConfig) (*RecordStorage, error) {
+	ctx, cancelFn := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancelFn()
+
 	conn, err := http.NewConnection(http.ConnectionConfig{
 		Endpoints: []string{config.Endpoint},
 	})

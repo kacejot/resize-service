@@ -16,6 +16,21 @@ type ImageStorage struct {
 	cloudStorage  cloud.Cloud
 }
 
+// New creates new instance of ImageStorage
+func New() (Storage, error) {
+	records, err := db.OpenRecords(db.LoadArangoConfig())
+	if err != nil {
+		return nil, err
+	}
+
+	images := cloud.New(cloud.LoadDropboxConfig())
+
+	return &ImageStorage{
+		recordStorage: *records,
+		cloudStorage:  *images,
+	}, nil
+}
+
 // RecordResizeResult loads resized images to cloud and creates record about this operation in database
 func (is *ImageStorage) RecordResizeResult(ctx context.Context, resizeResult resize.Result) (*model.ResizeResult, error) {
 	uploadResult, err := is.cloudStorage.UploadImages(resizeResult)

@@ -2,13 +2,13 @@ package cloud
 
 import (
 	"bytes"
-	"flag"
 	"io/ioutil"
 	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/kacejot/resize-service/pkg/api/graph/model"
 	"github.com/kacejot/resize-service/pkg/resize"
+	"github.com/kacejot/resize-service/pkg/utils"
 	"github.com/tj/go-dropbox"
 )
 
@@ -28,15 +28,15 @@ type DropboxConfig struct {
 	Key string
 }
 
-// LoadArangoConfig fills ArangoConfig with cmd args
-func LoadDropboxConfig() DropboxConfig {
-	return DropboxConfig{
-		Key: *flag.String("dropbox-key", "", "identifies the storage and the user"),
+// LoadDropboxConfig fills ArangoConfig with cmd args
+func LoadDropboxConfig() *DropboxConfig {
+	return &DropboxConfig{
+		Key: utils.EnvOrDie("DROPBOX_KEY"),
 	}
 }
 
 // New creates new instance of Dropbox cloud storage
-func New(config DropboxConfig) *Cloud {
+func New(config *DropboxConfig) *Cloud {
 	return &Cloud{
 		dropboxClient: dropbox.New(&dropbox.Config{
 			AccessToken: config.Key,

@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/kacejot/resize-service/pkg/utils"
+
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/kacejot/resize-service/pkg/api/graph"
@@ -21,7 +23,10 @@ func main() {
 		port = defaultPort
 	}
 
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+	resolver, err := graph.NewResolver()
+	utils.Unwrap(err)
+
+	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: resolver}))
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)
