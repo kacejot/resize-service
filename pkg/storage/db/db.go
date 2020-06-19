@@ -88,9 +88,14 @@ func OpenRecords(config *ArangoConfig) (*RecordStorage, error) {
 // StoreRecord stores links of uploaded images to db and returns them with unique record ID
 // This ID could be used later to extract the record
 func (rs *RecordStorage) StoreRecord(ctx context.Context, result cloud.UploadResult) (*model.ResizeResult, error) {
+	user := ctx.Value("user")
+	if user == nil {
+		return nil, errors.New("user was not specified")
+	}
+
 	record := Record{
 		Images: result,
-		User:   ctx.Value("user").(string),
+		User:   user.(string),
 	}
 	meta, err := rs.records.CreateDocument(ctx, record)
 	if err != nil {
@@ -112,7 +117,12 @@ func (rs *RecordStorage) FindRecordByID(ctx context.Context, id string) (*model.
 		return nil, err
 	}
 
-	if out.User != ctx.Value("user").(string) {
+	user := ctx.Value("user")
+	if user == nil {
+		return nil, errors.New("user was not specified")
+	}
+
+	if out.User != user.(string) {
 		return nil, errors.New("access denied")
 	}
 
@@ -125,14 +135,18 @@ func (rs *RecordStorage) FindRecordByID(ctx context.Context, id string) (*model.
 
 // FindRecordsForUser returns all performed resizes by single user
 func (rs *RecordStorage) FindRecordsForUser(ctx context.Context) ([]*model.ResizeResult, error) {
-	user := ctx.Value("user").(string)
+	user := ctx.Value("user")
+	if user == nil {
+		return nil, errors.New("user was not specified")
+	}
+	userStr := user.(string)
 
 	query := fmt.Sprintf(`
 		FOR record in %s
 			FILTER record.user == %s
 			RETURN record`,
 		Collection,
-		user)
+		userStr)
 
 	cursor, err := rs.records.Database().Query(ctx, query, nil)
 	if err != nil {
