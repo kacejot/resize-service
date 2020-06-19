@@ -17,5 +17,5 @@ type Result struct {
 
 // Resize represents the instance that is able to resize an image
 type Resize interface {
-	Resize(image []byte, width int, height int) (Result, error)
+	Resize(image []byte, width int, height int) (*Result, error)
 }
